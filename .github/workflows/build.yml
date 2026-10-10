@@ -82,9 +82,9 @@ jobs:
           fi
 
           # Asset names must match the app names used by NSImage(named:).
-          ASSETS="$(xcrun assetutil --info "$APP/Contents/Resources/Assets.car" 2>/dev/null || true)"
+          xcrun assetutil --info "$APP/Contents/Resources/Assets.car" > /tmp/assets.json 2>/dev/null || true
           for name in Hyper Neovim OTTY; do
-            if ! printf '%s' "$ASSETS" | grep -q "\"$name\""; then
+            if ! grep -q "\"$name\"" /tmp/assets.json; then
               echo "FAIL: asset '$name' missing from Assets.car"; exit 1
             fi
           done
