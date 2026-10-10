@@ -33,7 +33,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setStatusItemIcon()
         setStatusItemVisible()
         setStatusToggle()
-        
+        makeStatusBarMenuImagesVisible()
+
         logw("")
         logw("App launched")
         logw("macOS \(ProcessInfo().operatingSystemVersionString)")
@@ -105,7 +106,20 @@ extension AppDelegate {
             statusItem.menu = statusBarMenu
         }
     }
-    
+
+    /// macOS 27 hides menu item images by default for apps linked against the
+    /// macOS 27 SDK. Walk the status bar menu so its images stay visible.
+    func makeStatusBarMenuImagesVisible() {
+        makeMenuImagesVisible(statusBarMenu)
+    }
+
+    private func makeMenuImagesVisible(_ menu: NSMenu?) {
+        menu?.items.forEach { item in
+            item.makeImageVisible()
+            makeMenuImagesVisible(item.submenu)
+        }
+    }
+
     @objc func statusBarButtonClicked(sender: NSStatusBarButton) {
         let event = NSApp.currentEvent!
         if event.type == .rightMouseDown || event.type == .rightMouseUp

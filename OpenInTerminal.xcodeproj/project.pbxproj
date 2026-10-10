@@ -69,6 +69,7 @@
 		95DD6296243B211B003550B3 /* ArrayExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95DD6295243B211B003550B3 /* ArrayExtensions.swift */; };
 		95DFC1242354A2C300941D3A /* DefaultsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95DFC1232354A2C300941D3A /* DefaultsManager.swift */; };
 		95F5BED5227734E800D505A0 /* PreferencesWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95F5BED4227734E800D505A0 /* PreferencesWindowController.swift */; };
+		C66A42472CBDAEA7149D4356 /* NSMenuItemExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B5420E58AB935C7A06B67FF /* NSMenuItemExtensions.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -185,6 +186,7 @@
 		955A93C12D1C31C7001C7A45 /* mul */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = mul; path = mul.lproj/Preferences.xcstrings; sourceTree = "<group>"; };
 		9571DA83227E6FFF0076AA64 /* AdvancedPreferencesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedPreferencesViewController.swift; sourceTree = "<group>"; };
 		9584EAB72CF06A500080F94F /* PathExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathExtensions.swift; sourceTree = "<group>"; };
+		2B5420E58AB935C7A06B67FF /* NSMenuItemExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSMenuItemExtensions.swift; sourceTree = "<group>"; };
 		9584EDF3226DEF79003C7EE8 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		9584EDF5226DEFC0003C7EE8 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		9590B68D226C04E000362B93 /* Defaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
@@ -387,6 +389,7 @@
 			children = (
 				95DD6295243B211B003550B3 /* ArrayExtensions.swift */,
 				9584EAB72CF06A500080F94F /* PathExtensions.swift */,
+				2B5420E58AB935C7A06B67FF /* NSMenuItemExtensions.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -625,6 +628,7 @@
 				95DFC1242354A2C300941D3A /* DefaultsManager.swift in Sources */,
 				95C7C2F2257B7E1E004C8355 /* SupportedApps.swift in Sources */,
 				4725254122680F5A003C50DF /* Finder.swift in Sources */,
+				C66A42472CBDAEA7149D4356 /* NSMenuItemExtensions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

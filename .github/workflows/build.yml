@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 30
     env:
       APP: build/Build/Products/Release/OpenInTerminal.app
@@ -62,7 +62,7 @@ jobs:
           done
           codesign --force --sign - --entitlements "$APP_ENT" "$APP"
 
-      - name: Verify signature + entitlements
+      - name: Verify signature + entitlements + assets
         run: |
           set -euo pipefail
           EXT="$APP/Contents/PlugIns/OpenInTerminalFinderExtension.appex"
@@ -80,7 +80,15 @@ jobs:
           if codesign -d --entitlements - "$APP" 2>/dev/null | grep -q "application-groups"; then
             echo "FAIL: app still references application-groups"; exit 1
           fi
-          echo "OK: ad-hoc signature + cert-free shared-preference entitlements verified"
+
+          # Asset names must match the app names used by NSImage(named:).
+          ASSETS="$(xcrun assetutil --info "$APP/Contents/Resources/Assets.car" 2>/dev/null || true)"
+          for name in Hyper Neovim OTTY; do
+            if ! printf '%s' "$ASSETS" | grep -q "\"$name\""; then
+              echo "FAIL: asset '$name' missing from Assets.car"; exit 1
+            fi
+          done
+          echo "OK: ad-hoc signature + cert-free entitlements + asset names verified"
 
       - name: Package (zip + dmg)
         run: |

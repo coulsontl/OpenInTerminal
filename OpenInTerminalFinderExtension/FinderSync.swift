@@ -103,6 +103,7 @@ class FinderSync: FIFinderSync {
                 let copyPathIcon = NSImage(named: "context_menu_icon_color_path")
                 copyPathItem.image = copyPathIcon
             }
+            copyPathItem.makeImageVisible()
             return copyPathItem
         }
     }
@@ -131,6 +132,7 @@ class FinderSync: FIFinderSync {
                                             keyEquivalent: "")
         let terminalIcon = DefaultsManager.shared.getAppIcon(terminal)
         openInTerminalItem.image = terminalIcon
+        openInTerminalItem.makeImageVisible()
         itemsMenu.addItem(openInTerminalItem)
 
         guard let editor = DefaultsManager.shared.defaultEditor else { return menu }
@@ -140,6 +142,7 @@ class FinderSync: FIFinderSync {
                                             keyEquivalent: "")
         let editorIcon = DefaultsManager.shared.getAppIcon(editor)
         openInEditorItem.image = editorIcon
+        openInEditorItem.makeImageVisible()
         itemsMenu.addItem(openInEditorItem)
 
         // add "Copy Path"
@@ -172,6 +175,7 @@ class FinderSync: FIFinderSync {
                                       keyEquivalent: "")
             let appIcon = DefaultsManager.shared.getAppIcon(app)
             menuItem.image = appIcon
+            menuItem.makeImageVisible()
             itemsMenu.addItem(menuItem)
         }
 

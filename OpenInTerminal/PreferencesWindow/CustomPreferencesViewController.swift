@@ -183,6 +183,7 @@ class CustomPreferencesViewController: PreferencesViewController {
             menuItem.target = self
             menuItem.image = NSImage(named: $0)
             menuItem.image?.size = NSSize(width: 14, height: 14)
+            menuItem.makeImageVisible()
             installedSupportedMenu.addItem(menuItem)
         }
         let installedSupportedMenuItem = NSMenuItem()
@@ -199,6 +200,7 @@ class CustomPreferencesViewController: PreferencesViewController {
             menuItem.target = self
             menuItem.image = NSImage(named: $0.name)
             menuItem.image?.size = NSSize(width: 14, height: 14)
+            menuItem.makeImageVisible()
             supportedMenu.addItem(menuItem)
         }
         let supportedMenuItem = NSMenuItem()
@@ -221,6 +223,7 @@ class CustomPreferencesViewController: PreferencesViewController {
             menuItem.target = self
             menuItem.image = icon
             menuItem.image?.size = NSSize(width: 14, height: 14)
+            menuItem.makeImageVisible()
             runningMenu.addItem(menuItem)
             let app = App(name: name, type: .terminal)
             runningApps.append(app)

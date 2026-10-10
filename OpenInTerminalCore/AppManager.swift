@@ -86,12 +86,21 @@ public class AppManager {
         return rawName
     }
     
+    /// Icons are cached by path so rebuilding menus (e.g. the "+" menu) does
+    /// not repeatedly query LaunchServices.
+    private static let applicationIconCache = NSCache<NSString, NSImage>()
+
     // 从路径获取应用图标
     public static func getApplicationIcon(from path: String?) -> NSImage {
         guard let validPath = path else {
             return #imageLiteral(resourceName: "SF.cube")
         }
-        return NSWorkspace.shared.icon(forFile: validPath)
+        if let cached = applicationIconCache.object(forKey: validPath as NSString) {
+            return cached
+        }
+        let icon = NSWorkspace.shared.icon(forFile: validPath)
+        applicationIconCache.setObject(icon, forKey: validPath as NSString)
+        return icon
     }
     
     public static func getApplicationIcon(from path: URL) -> NSImage {
