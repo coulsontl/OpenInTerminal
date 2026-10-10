@@ -1,0 +1,155 @@
+name: Build (macOS 27 cert-free fix)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [macos27-certfree-fix]
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 30
+    env:
+      APP: build/Build/Products/Release/OpenInTerminal.app
+      EXT_ENT: OpenInTerminalFinderExtension/OpenInTerminalFinderExtension.entitlements
+      APP_ENT: OpenInTerminal/OpenInTerminal.entitlements
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build OpenInTerminalHelper (unsigned)
+        run: |
+          set -euo pipefail
+          xcodebuild -workspace OpenInTerminal.xcworkspace \
+            -scheme OpenInTerminalHelper -configuration Release \
+            -derivedDataPath build -destination 'generic/platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO MACOSX_DEPLOYMENT_TARGET=12.0 \
+            build
+
+      - name: Build OpenInTerminal (unsigned)
+        run: |
+          set -euo pipefail
+          xcodebuild -workspace OpenInTerminal.xcworkspace \
+            -scheme OpenInTerminal -configuration Release \
+            -derivedDataPath build -destination 'generic/platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO MACOSX_DEPLOYMENT_TARGET=12.0 \
+            build
+
+      - name: Embed login-item helper + ad-hoc sign (leaf-first)
+        run: |
+          set -euo pipefail
+          HELPER="build/Build/Products/Release/OpenInTerminalHelper.app"
+
+          mkdir -p "$APP/Contents/Library/LoginItems"
+          rm -rf "$APP/Contents/Library/LoginItems/OpenInTerminalHelper.app"
+          cp -R "$HELPER" "$APP/Contents/Library/LoginItems/"
+
+          # leaf-first: dylibs -> frameworks -> app extensions -> nested apps -> main app
+          find "$APP" -type f -name "*.dylib" -print0 | while IFS= read -r -d '' d; do
+            codesign --force --sign - "$d"
+          done
+          find "$APP" -type d -name "*.framework" -print0 | while IFS= read -r -d '' fw; do
+            codesign --force --sign - "$fw"
+          done
+          find "$APP" -type d -name "*.appex" -print0 | while IFS= read -r -d '' ext; do
+            codesign --force --sign - --entitlements "$EXT_ENT" "$ext"
+          done
+          find "$APP" -mindepth 1 -type d -name "*.app" -print0 | while IFS= read -r -d '' sub; do
+            codesign --force --sign - "$sub"
+          done
+          codesign --force --sign - --entitlements "$APP_ENT" "$APP"
+
+      - name: Verify signature + entitlements
+        run: |
+          set -euo pipefail
+          EXT="$APP/Contents/PlugIns/OpenInTerminalFinderExtension.appex"
+
+          codesign --verify --deep --strict --verbose=2 "$APP"
+
+          test -d "$APP/Contents/Library/LoginItems/OpenInTerminalHelper.app"
+
+          if ! codesign -d --entitlements - "$EXT" 2>/dev/null | grep -q "temporary-exception.shared-preference.read-write"; then
+            echo "FAIL: extension is missing the shared-preference entitlement"; exit 1
+          fi
+          if codesign -d --entitlements - "$EXT" 2>/dev/null | grep -q "application-groups"; then
+            echo "FAIL: extension still references application-groups"; exit 1
+          fi
+          if codesign -d --entitlements - "$APP" 2>/dev/null | grep -q "application-groups"; then
+            echo "FAIL: app still references application-groups"; exit 1
+          fi
+          echo "OK: ad-hoc signature + cert-free shared-preference entitlements verified"
+
+      - name: Package (zip + dmg)
+        run: |
+          set -euo pipefail
+          VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Contents/Info.plist")
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          ZIP="OpenInTerminal-${VERSION}-certfree-macos27.zip"
+          DMG="OpenInTerminal-${VERSION}-certfree-macos27.dmg"
+
+          ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
+
+          STAGING="$(mktemp -d)"
+          ditto "$APP" "$STAGING/OpenInTerminal.app"
+          ln -s /Applications "$STAGING/Applications"
+          hdiutil create -volname "OpenInTerminal" -srcfolder "$STAGING" -ov -format UDZO "$DMG"
+          hdiutil verify "$DMG"
+
+          {
+            echo "### OpenInTerminal ${VERSION} (macOS 27 cert-free fix)"
+            echo ""
+            echo "| File | SHA-256 |"
+            echo "|---|---|"
+            echo "| \`${ZIP}\` | \`$(shasum -a 256 "$ZIP" | cut -d' ' -f1)\` |"
+            echo "| \`${DMG}\` | \`$(shasum -a 256 "$DMG" | cut -d' ' -f1)\` |"
+            echo ""
+            echo "Ad-hoc signed, not notarized — after install run: \`xattr -dr com.apple.quarantine /Applications/OpenInTerminal.app\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: OpenInTerminal-certfree-macos27
+          path: |
+            OpenInTerminal-*-certfree-macos27.zip
+            OpenInTerminal-*-certfree-macos27.dmg
+          if-no-files-found: error
+
+      - name: Create GitHub Release (tag builds only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          ZIP="OpenInTerminal-${VERSION}-certfree-macos27.zip"
+          DMG="OpenInTerminal-${VERSION}-certfree-macos27.dmg"
+
+          cat > release-notes.md <<EOF
+          Community build of OpenInTerminal ${VERSION} with a cert-free fix for macOS 27,
+          where group containers without a team-id prefix are rejected by the system.
+
+          - Main app and Finder extension share a plain preference domain
+            (\`wang.jianing.app.OpenInTerminal.shared\`) instead of an App Group container.
+          - The Finder extension keeps its sandbox and uses the
+            \`com.apple.security.temporary-exception.shared-preference.read-write\` entitlement.
+          - Ad-hoc signed, **not notarized**. After dragging the app to /Applications, run:
+
+          \`\`\`
+          xattr -dr com.apple.quarantine /Applications/OpenInTerminal.app
+          \`\`\`
+
+          Verified end-to-end on macOS 27.0.1: extension accepted by pkd, configuration
+          read/write works in launchd context.
+          EOF
+
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$DMG" "$ZIP" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" \
+              --title "OpenInTerminal ${VERSION} (macOS 27 cert-free fix)" \
+              --notes-file release-notes.md \
+              "$DMG" "$ZIP"
+          fi
